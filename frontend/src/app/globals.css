@@ -8,7 +8,7 @@
 
 body {
   font-size: 1rem;
-  font-family: 
+  font-family: system-ui, -apple-system, sans-serif;
 }
 
 @layer utilities {

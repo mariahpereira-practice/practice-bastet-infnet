@@ -1,4 +1,4 @@
-import { UsurioMockup, type Curso, type Usuario } from "./mockup";
+import { UsurioMockup, CursosMockup, type Curso, type Usuario } from "./mockup";
 import router from '@/config/routes'
 
 const MOCKED = router.root === '#';
@@ -77,6 +77,10 @@ export async function Login({ email, senha } : { email: string, senha : string }
 
 export async function ListarCursos({ filtro } : { filtro?: string }){
     try{
+        if(MOCKED){
+            return CursosMockup;
+        }
+
         const result = await request( router["listar-cursos"]( filtro ));
 
         if( result.error ){
@@ -84,66 +88,69 @@ export async function ListarCursos({ filtro } : { filtro?: string }){
         }
 
         return result
+    } catch (error) {
+        return CursosMockup;
     }
 }
 
 export async function Inscricao({ idCurso } : { idCurso : string }){
-    const status_code : number = 400;
-    const result : any = {}
+    try{
+        if(MOCKED){
+            return { mensagem: "Inscrição realizada com sucesso." };
+        }
 
-    throw new Error("TODO");
+        const result = await request( router["inscrever-curso"]( idCurso ), { method: "POST" });
 
-    if( status_code == 404 ){
-        return {
-            error: "Curso não existe."
-        };
-    }else if( status_code == 403 ){
-        return {
-            error: "Usuário precisa estar logado para se inscrever."
-        };
-    }else if( status_code != 200 ){
-        return {
-            error: result?.mensagem
-        };
-    }else{
-        return result
+        if( result.status_code == 404 ){
+            return { error: "Curso não existe." };
+        }else if( result.status_code == 403 ){
+            return { error: "Usuário precisa estar logado para se inscrever." };
+        }else if( result.status_code != 200 ){
+            return { error: result?.mensagem };
+        }
+
+        return result;
+    } catch (error) {
+        return { error: "Erro ao realizar inscrição." };
     }
 }
 
 export async function Cancelar({ idCurso } : { idCurso : string }){
-    const status_code : number = 400;
-    const result : any = {}
+    try{
+        if(MOCKED){
+            return { mensagem: "Inscrição cancelada com sucesso." };
+        }
 
-    throw new Error("TODO");
+        const result = await request( router["cancelar-curso"]( idCurso ), { method: "DELETE" });
 
-    if( status_code == 404 ){
-        return {
-            error: "Curso não existe."
-        };
-    }else if( status_code == 403 ){
-        return {
-            error: "Usuário precisa estar logado para cancelar inscrição."
-        };
-    }else if( status_code != 200 ){
-        return {
-            error: result?.mensagem
-        };
-    }else{
-        return result
+        if( result.status_code == 404 ){
+            return { error: "Curso não existe." };
+        }else if( result.status_code == 403 ){
+            return { error: "Usuário precisa estar logado para cancelar inscrição." };
+        }else if( result.status_code != 200 ){
+            return { error: result?.mensagem };
+        }
+
+        return result;
+    } catch (error) {
+        return { error: "Erro ao cancelar inscrição." };
     }
 }
 
 export async function MeusCursos({ idUsuario }:{ idUsuario : string }){
-    const status_code : number = 400;
-    const result : Curso[] = []
+    try{
+        if(MOCKED){
+            return CursosMockup.filter( c => c.inscrito );
+        }
 
-    throw new Error("TODO");
-    
-    if( status_code == 403 ){
-        return {
-            error: "Usuário só pode ver os próprios cursos."
-        };
-    }else{
-        return result
+        const result = await request( router["meus-cursos"]( idUsuario ));
+
+        if( result.status_code == 403 ){
+            return { error: "Usuário só pode ver os próprios cursos." };
+        }
+
+        return result;
+    } catch (error) {
+        return CursosMockup.filter( c => c.inscrito );
     }
 }
