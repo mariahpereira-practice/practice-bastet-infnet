@@ -1,51 +1,67 @@
 const Enrollment = require('../models/Enrollment');
-const TravelPackage = require('../models/TravelPackage');
-const User = require('../models/User');
+const Curso = require('../models/Cursos');
 
-const getEnrollments = async (req, res) => {
+exports.inscrever = async (req, res) => {
     try {
-        const enrollments = await Enrollment.findAll();
-        res.json(enrollments);
+        const userId = req.user.id;
+        const { idCurso } = req.params;
+        const cursoId = Number(idCurso);
+
+        if (!Number.isInteger(cursoId) || cursoId <= 0) {
+            return res.status(400).json({ message: 'ID de curso invalido' });
+        }
+
+        const curso = await Curso.findByPk(cursoId);
+        if (!curso) return res.status(404).json({ message: 'Curso não encontrado' });
+
+        const existe = await Enrollment.findOne({ where: { userId, cursoId } });
+        if (existe) return res.status(409).json({ message: 'Você já está inscrito neste curso' });
+
+        await Enrollment.create({ userId, cursoId });
+        res.status(201).json({ message: 'Inscrição realizada com sucesso' });
     } catch (error) {
-        console.error('Error fetching enrollments:', error);
-        res.status(500).json({ error: 'An error occurred while fetching enrollments.' });
+        res.status(500).json({ message: 'Erro ao inscrever', error: error.message });
     }
 };
 
-const addEnrollment = async (req, res) => {
+exports.cancelar = async (req, res) => {
     try {
-        const UserId = req.body.UserId;
-        const TravelPackageId = req.body.TravelPackageId;
+        const userId = req.user.id;
+        const { idCurso } = req.params;
+        const cursoId = Number(idCurso);
 
-        if (!UserId || !TravelPackageId) {
-            return res.status(400).json({ error: 'UserId and TravelPackageId are required.' });
+        if (!Number.isInteger(cursoId) || cursoId <= 0) {
+            return res.status(400).json({ message: 'ID de curso invalido' });
         }
 
-        const user = await User.findByPk(UserId);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found.' });
-        }
+        const inscricao = await Enrollment.findOne({ where: { userId, cursoId } });
+        if (!inscricao) return res.status(404).json({ message: 'Inscrição não encontrada' });
 
-        const travelPackage = await TravelPackage.findByPk(TravelPackageId);
-        if (!travelPackage) {
-            return res.status(404).json({ error: 'Travel package not found.' });
-        }
-
-        if (travelPackage.remainingVacancies > 0) {
-            travelPackage.remainingVacancies -= 1;
-            await travelPackage.save();
-            const enrollment = await Enrollment.create({ UserId, TravelPackageId });
-            res.json(enrollment);
-        } else {
-            return res.status(400).json({ error: 'No remaining vacancies for this travel package.' });
-        }
+        await inscricao.destroy();
+        res.json({ message: 'Inscrição cancelada com sucesso' });
     } catch (error) {
-        console.error('Error adding enrollment:', error);
-        res.status(500).json({ error: 'An error occurred while adding the enrollment.' });
+        res.status(500).json({ message: 'Erro ao cancelar', error: error.message });
     }
 };
 
-module.exports = {
-    getEnrollments,
-    addEnrollment,
+exports.minhasInscricoes = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const cursos = await Curso.findAll({
+            include: [{
+                model: Enrollment,
+                where: { userId },
+                attributes: []
+            }],
+            order: [['inicio', 'ASC']]
+        });
+
+        res.json({
+            total: cursos.length,
+            cursos
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao buscar inscrições', error: error.message });
+    }
 };

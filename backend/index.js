@@ -3,10 +3,12 @@ const conn = require('./database/conn');
 
 const app = express();
 
-const travelPackageRoutes = require('./routes/travelPackRoutes');
-const enrollmentRoutes = require('./routes/enrollmentRoutes');
 const userRoutes = require('./routes/usersRoutes');
 const authenticationRoutes = require('./routes/authenticationRoutes');
+const cursosRoutes = require('./routes/cursosRoutes');
+const enrollmentRoutes = require('./routes/enrollmentRoutes');
+
+require('./models/associations');
 
 app.use(
     express.urlencoded({extended: true})
@@ -14,23 +16,24 @@ app.use(
 
 app.use(express.json());
 
-app.use('/travelPackages', travelPackageRoutes);
-app.use('/enrollments', enrollmentRoutes);
-app.use('/users', userRoutes);
+app.use('/usuarios', userRoutes);
 app.use('/login', authenticationRoutes);
+app.use('/cursos', cursosRoutes);
+app.use('/inscricoes', enrollmentRoutes);
+
 
 app.use('/', (req, res) => {
     res.json({message: 'API', endpoints: [
-        'GET /travelPackages',
-        'POST /travelPackages',
-        'GET /users',
-        'POST /users',
-        'GET /enrollments',
-        'POST /login',
+        {method: 'POST', path: '/usuarios', description: 'Criar um novo usuário'},
+        {method: 'POST', path: '/login', description: 'Autenticar um usuário'},
+        {method: 'GET', path: '/cursos', description: 'Listar todos os cursos'},
+        {method: 'POST', path: '/inscricoes/:idCurso', description: 'Fazer Inscrição em um curso'},
+        {method: 'DELETE', path: '/inscricoes/:idCurso', description: 'Cancelar Inscrição em um curso'},
+        {method: 'GET', path: '/inscricoes', description: 'Listar os cursos de um usuário específico'}
     ]})
 });
 
-conn.sync({force: false}).then(() => {
+conn.sync({alter: true}).then(() => {
     console.log('sync OK');
     app.listen(3333, () => {
         console.log('Server is running');

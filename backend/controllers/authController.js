@@ -1,4 +1,5 @@
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const Users = require('../models/User');
 const {Op} = require('sequelize');
@@ -33,7 +34,13 @@ class AuthenticationController {
                 return res.status(401).json({message: 'Invalid password'});
             }
 
-            res.status(200).json({message: 'Login successful'});
+            const token = jwt.sign(
+                { id: user.id, username: user.username, email: user.email },
+                process.env.JWT_SECRET,
+                { expiresIn: '8h' }
+            );
+
+            res.status(200).json({ message: 'Login successful', token });
         } catch (error) {
             console.error('Error during login:', error);
             res.status(500).json({message: 'Internal server error'});

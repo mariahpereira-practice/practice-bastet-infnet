@@ -35,6 +35,10 @@ const addUser = async (req, res) => {
         if (password.length < 8) {
             return res.status(400).json({ message: 'Password must be at least 8 characters long' });
         }
+
+        if (!checkPassword(password)) {
+            return res.status(400).json({ message: 'Password is invalid' });
+        }
         
         const user = await Users.create({ 
             username: username.trim(), 
@@ -62,13 +66,7 @@ function checkPassword(password) {
     return minimumLength && numberCheck && letterCheck;
 }
 
-const testUrlEncoder = async (req, res) => {
-    const roles = req.body.roles;
-    res.send(roles);
-}
-
 module.exports = {
     getUsers,
-    addUser,
-    testUrlEncoder
+    addUser
 };
